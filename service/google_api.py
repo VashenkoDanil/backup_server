@@ -7,7 +7,6 @@ from googleapiclient.discovery import build, Resource
 from googleapiclient.http import MediaFileUpload
 
 from settings.google_api import SCOPES, SERVICE_ACCOUNT_FILE
-from settings.project import ID_ROOT_DIRECTORY
 
 
 @dataclass
@@ -18,10 +17,9 @@ class GoogleApiService:
         credentials = service_account.Credentials.from_service_account_file(SERVICE_ACCOUNT_FILE, scopes=SCOPES)
         self.service = build('drive', 'v3', credentials=credentials)
 
-    def get_backup_folder(self) -> list:
-        query = f"'{ID_ROOT_DIRECTORY}' in parents " \
-                f"and mimeType='application/vnd.google-apps.folder'" \
-                f"and name contains 'backup_server'"
+    def get_folders(self, id_root_directory: str) -> list:
+        query = f"'{id_root_directory}' in parents " \
+                f"and mimeType='application/vnd.google-apps.folder'"
         results = self.service.files().list(pageSize=1000,
                                             fields="nextPageToken, files(id, name, mimeType, parents, createdTime)",
                                             q=query,
@@ -35,7 +33,7 @@ class GoogleApiService:
         folder = self.service.files().create(body=folder_metadata, fields='id').execute()
         return folder.get('id', [])
 
-    def create_file(self, name, root, folder_id) -> None:
+    def create_file(self, name: str, root: str, folder_id: str) -> None:
         file_metadata = {'name': name, 'parents': [folder_id]}
         media = MediaFileUpload(
             os.path.join(root, name),
@@ -44,14 +42,14 @@ class GoogleApiService:
                                     media_body=media,
                                     fields='id').execute()
 
-    def upload_folder(self, folder_path, name_folder) -> None:
+    def upload_folder(self, folder_path: str, name_folder: str, id_root_directory: str) -> None:
         parents_id = {}
 
         for root, _, files in os.walk(folder_path, topdown=True):
             last_dir = root.split('/')[-1]
             pre_last_dir = root.split('/')[-2]
             if pre_last_dir not in parents_id.keys():
-                pre_last_dir = self.create_folder(name_folder, ID_ROOT_DIRECTORY)
+                pre_last_dir = self.create_folder(name_folder, id_root_directory)
             else:
                 pre_last_dir = parents_id[pre_last_dir]
 
@@ -62,5 +60,5 @@ class GoogleApiService:
 
             parents_id[last_dir] = id_folder
 
-    def remote_file(self, file_id) -> None:
+    def remote_file(self, file_id: str) -> None:
         self.service.files().delete(fileId=file_id).execute()

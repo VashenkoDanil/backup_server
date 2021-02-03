@@ -2,8 +2,6 @@
 *~
 __pycache__
 venv
-db.sqlite3
 .DS_Store
 .idea/
-.env
 /settings/backup-server-minecraft-key.json
