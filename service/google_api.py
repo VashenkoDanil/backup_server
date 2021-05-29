@@ -1,3 +1,4 @@
+import concurrent.futures
 import mimetypes
 import os
 from dataclasses import dataclass, field
@@ -33,10 +34,10 @@ class GoogleApiService:
         folder = self.service.files().create(body=folder_metadata, fields='id').execute()
         return folder.get('id', [])
 
-    def create_file(self, name: str, root: str, folder_id: str) -> None:
+    def create_file(self, name: str, file_path: str, folder_id: str) -> None:
         file_metadata = {'name': name, 'parents': [folder_id]}
         media = MediaFileUpload(
-            os.path.join(root, name),
+            os.path.join(file_path, name),
             mimetype=mimetypes.MimeTypes().guess_type(name)[0])
         self.service.files().create(body=file_metadata,
                                     media_body=media,
@@ -44,6 +45,7 @@ class GoogleApiService:
 
     def upload_folder(self, folder_path: str, name_folder: str, id_root_directory: str) -> None:
         parents_id = {}
+        create_file_params = []
 
         for root, _, files in os.walk(folder_path, topdown=True):
             last_dir = root.split('/')[-1]
@@ -56,9 +58,12 @@ class GoogleApiService:
             id_folder = self.create_folder(last_dir, pre_last_dir)
 
             for name in files:
-                self.create_file(name, root, id_folder)
+                create_file_params.append((name, root, id_folder))
 
             parents_id[last_dir] = id_folder
+
+        with concurrent.futures.ThreadPoolExecutor() as executor:
+            executor.map(self.create_file, create_file_params)
 
     def remote_file(self, file_id: str) -> None:
         self.service.files().delete(fileId=file_id).execute()

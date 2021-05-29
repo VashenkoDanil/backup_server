@@ -5,12 +5,17 @@
 
 ### **Установка:**
 
+Версия python >= 3.8
+
 Создаем сервисный аккаунт в консоли [Google Cloud](console.cloud.google.com) и для email сервисного аккаунта открываем доступ на редактирование необходимых папок на гугл диске куда будем загружать файлы. [Пример как получить ключ для сервисного аккаунта в формате JSON](https://www.youtube.com/watch?v=Lxxge05UP8M&feature=emb_logo)
 
 Копируем JSON файл в папку /settings
 
-### **Пример команды:**
- `python main.py -f {file_path} -i {id_root_directory} -m {max_count_backup} -n {name_backup_folder}`
+### **Команда upload_backup:**
+
+Создает бэкап папки на google диске. Проверяет их количество на google диске и удаляет лишние 
+
+ `python upload_backup.py -f {file_path} -i {id_root_directory} -m {max_count_backup} -n {name_backup_folder}`
 
 где:
  - `-f {file_path}`, где file_path - это полный путь до файла, который находится на локальном компьютере
