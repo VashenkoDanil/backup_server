@@ -1,4 +1,3 @@
-import concurrent.futures
 import mimetypes
 import os
 from dataclasses import dataclass, field
@@ -45,7 +44,6 @@ class GoogleApiService:
 
     def upload_folder(self, folder_path: str, name_folder: str, id_root_directory: str) -> None:
         parents_id = {}
-        create_file_params = []
 
         for root, _, files in os.walk(folder_path, topdown=True):
             last_dir = root.split('/')[-1]
@@ -58,12 +56,9 @@ class GoogleApiService:
             id_folder = self.create_folder(last_dir, pre_last_dir)
 
             for name in files:
-                create_file_params.append((name, root, id_folder))
+                self.create_file(name, root, id_folder)
 
             parents_id[last_dir] = id_folder
-
-        with concurrent.futures.ThreadPoolExecutor() as executor:
-            executor.map(self.create_file, create_file_params)
 
     def remote_file(self, file_id: str) -> None:
         self.service.files().delete(fileId=file_id).execute()
